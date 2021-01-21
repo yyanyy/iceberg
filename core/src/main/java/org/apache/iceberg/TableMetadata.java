@@ -127,10 +127,16 @@ public class TableMetadata implements Serializable {
   public static class SnapshotLogEntry implements HistoryEntry {
     private final long timestampMillis;
     private final long snapshotId;
+    private final Integer schemaId;
 
-    SnapshotLogEntry(long timestampMillis, long snapshotId) {
+    SnapshotLogEntry(long timestampMillis, long snapshotId, Integer schemaId) {
       this.timestampMillis = timestampMillis;
       this.snapshotId = snapshotId;
+      this.schemaId = schemaId;
+    }
+
+    SnapshotLogEntry(long timestampMillis, long snapshotId) {
+      this(timestampMillis, snapshotId, null);
     }
 
     @Override
@@ -144,6 +150,11 @@ public class TableMetadata implements Serializable {
     }
 
     @Override
+    public Integer schemaId() {
+      return schemaId;
+    }
+
+    @Override
     public boolean equals(Object other) {
       if (this == other) {
         return true;
@@ -151,12 +162,13 @@ public class TableMetadata implements Serializable {
         return false;
       }
       SnapshotLogEntry that = (SnapshotLogEntry) other;
-      return timestampMillis == that.timestampMillis && snapshotId == that.snapshotId;
+      return timestampMillis == that.timestampMillis && snapshotId == that.snapshotId &&
+          Objects.equal(schemaId, that.schemaId);
     }
 
     @Override
     public int hashCode() {
-      return Objects.hashCode(timestampMillis, snapshotId);
+      return Objects.hashCode(timestampMillis, snapshotId, schemaId);
     }
 
     @Override
@@ -164,6 +176,7 @@ public class TableMetadata implements Serializable {
       return MoreObjects.toStringHelper(this)
           .add("timestampMillis", timestampMillis)
           .add("snapshotId", snapshotId)
+          .add("schemaId", schemaId)
           .toString();
     }
   }
@@ -610,7 +623,7 @@ public class TableMetadata implements Serializable {
         .build();
     List<HistoryEntry> newSnapshotLog = ImmutableList.<HistoryEntry>builder()
         .addAll(snapshotLog)
-        .add(new SnapshotLogEntry(snapshot.timestampMillis(), snapshot.snapshotId()))
+        .add(new SnapshotLogEntry(snapshot.timestampMillis(), snapshot.snapshotId(), snapshot.schemaId()))
         .build();
 
     return new TableMetadata(null, formatVersion, uuid, location,
@@ -667,7 +680,7 @@ public class TableMetadata implements Serializable {
     long nowMillis = System.currentTimeMillis();
     List<HistoryEntry> newSnapshotLog = ImmutableList.<HistoryEntry>builder()
         .addAll(snapshotLog)
-        .add(new SnapshotLogEntry(nowMillis, snapshot.snapshotId()))
+        .add(new SnapshotLogEntry(nowMillis, snapshot.snapshotId(), snapshot.schemaId()))
         .build();
 
     return new TableMetadata(null, formatVersion, uuid, location,

@@ -93,12 +93,12 @@ public class TestTableMetadata {
         new GenericManifestFile(localInput("file:/tmp/manfiest.1.avro"), SPEC_5.specId())));
     long currentSnapshotId = System.currentTimeMillis();
     Snapshot currentSnapshot = new BaseSnapshot(
-        ops.io(), currentSnapshotId, previousSnapshotId, currentSnapshotId, null, null, ImmutableList.of(
+        ops.io(), currentSnapshotId, previousSnapshotId, currentSnapshotId, null, null, 7, ImmutableList.of(
         new GenericManifestFile(localInput("file:/tmp/manfiest.2.avro"), SPEC_5.specId())));
 
     List<HistoryEntry> snapshotLog = ImmutableList.<HistoryEntry>builder()
         .add(new SnapshotLogEntry(previousSnapshot.timestampMillis(), previousSnapshot.snapshotId()))
-        .add(new SnapshotLogEntry(currentSnapshot.timestampMillis(), currentSnapshot.snapshotId()))
+        .add(new SnapshotLogEntry(currentSnapshot.timestampMillis(), currentSnapshot.snapshotId(), 7))
         .build();
 
     Schema schema = new Schema(6,
@@ -147,11 +147,15 @@ public class TestTableMetadata {
         (Long) previousSnapshotId, metadata.currentSnapshot().parentId());
     Assert.assertEquals("Current snapshot files should match",
         currentSnapshot.allManifests(), metadata.currentSnapshot().allManifests());
+    Assert.assertEquals("Schema ID for current snapshot should match",
+        (Integer) 7, metadata.currentSnapshot().schemaId());
     Assert.assertEquals("Previous snapshot ID should match",
         previousSnapshotId, metadata.snapshot(previousSnapshotId).snapshotId());
     Assert.assertEquals("Previous snapshot files should match",
         previousSnapshot.allManifests(),
         metadata.snapshot(previousSnapshotId).allManifests());
+    Assert.assertNull("Previous snapshot's schema ID should be null",
+        metadata.snapshot(previousSnapshotId).schemaId());
   }
 
   @Test
@@ -216,6 +220,8 @@ public class TestTableMetadata {
         (Long) previousSnapshotId, metadata.currentSnapshot().parentId());
     Assert.assertEquals("Current snapshot files should match",
         currentSnapshot.allManifests(), metadata.currentSnapshot().allManifests());
+    Assert.assertNull("Current snapshot's schema ID should be null",
+        metadata.currentSnapshot().schemaId());
     Assert.assertEquals("Previous snapshot ID should match",
         previousSnapshotId, metadata.snapshot(previousSnapshotId).snapshotId());
     Assert.assertEquals("Previous snapshot files should match",
@@ -223,6 +229,8 @@ public class TestTableMetadata {
         metadata.snapshot(previousSnapshotId).allManifests());
     Assert.assertEquals("Snapshot logs should match",
             expected.previousFiles(), metadata.previousFiles());
+    Assert.assertNull("Previous snapshot's schema ID should be null",
+        metadata.snapshot(previousSnapshotId).schemaId());
   }
 
   private static String toJsonWithoutSpecAndSchemaList(TableMetadata metadata) {

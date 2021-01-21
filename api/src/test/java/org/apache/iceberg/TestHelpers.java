@@ -102,6 +102,22 @@ public class TestHelpers {
     );
   }
 
+  public static void assertSameSchemaMap(Map<Integer, Schema> map1, Map<Integer, Schema> map2) {
+    if (map1.size() != map2.size()) {
+      Assert.fail("Should have same number of schemas in both maps");
+    }
+
+    map1.forEach((schemaId, schema1) -> {
+      Schema schema2 = map2.get(schemaId);
+      Assert.assertNotNull(String.format("Schema ID %s should exist in both map", schemaId), schema2);
+
+      Assert.assertEquals("Should have matching schema id",
+          schema1.schemaId(), schema2.schemaId());
+      Assert.assertEquals("Should have matching schema struct",
+          schema1.asStruct(), schema2.asStruct());
+    });
+  }
+
   private static class CheckReferencesBound extends ExpressionVisitors.ExpressionVisitor<Void> {
     private final String message;
 

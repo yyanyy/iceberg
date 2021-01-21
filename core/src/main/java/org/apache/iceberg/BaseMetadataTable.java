@@ -66,6 +66,11 @@ abstract class BaseMetadataTable implements Table, Serializable {
   }
 
   @Override
+  public Map<Integer, Schema> schemas() {
+    return ImmutableMap.of(TableMetadata.INITIAL_SCHEMA_ID, schema());
+  }
+
+  @Override
   public PartitionSpec spec() {
     return spec;
   }

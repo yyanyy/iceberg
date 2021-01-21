@@ -104,6 +104,7 @@ public class TableMetadataParser {
   static final String SNAPSHOT_LOG = "snapshot-log";
   static final String METADATA_FILE = "metadata-file";
   static final String METADATA_LOG = "metadata-log";
+  static final String SCHEMA_ID = "schema-id";
 
   public static void overwrite(TableMetadata metadata, OutputFile outputFile) {
     internalWrite(metadata, outputFile, true);
@@ -208,6 +209,21 @@ public class TableMetadataParser {
     }
     generator.writeEndObject();
 
+    writeSnapshotRelated(metadata, generator);
+
+    generator.writeArrayFieldStart(METADATA_LOG);
+    for (MetadataLogEntry logEntry : metadata.previousFiles()) {
+      generator.writeStartObject();
+      generator.writeNumberField(TIMESTAMP_MS, logEntry.timestampMillis());
+      generator.writeStringField(METADATA_FILE, logEntry.file());
+      generator.writeEndObject();
+    }
+    generator.writeEndArray();
+
+    generator.writeEndObject();
+  }
+
+  private static void writeSnapshotRelated(TableMetadata metadata, JsonGenerator generator) throws IOException {
     generator.writeNumberField(CURRENT_SNAPSHOT_ID,
         metadata.currentSnapshot() != null ? metadata.currentSnapshot().snapshotId() : -1);
 
@@ -222,20 +238,15 @@ public class TableMetadataParser {
       generator.writeStartObject();
       generator.writeNumberField(TIMESTAMP_MS, logEntry.timestampMillis());
       generator.writeNumberField(SNAPSHOT_ID, logEntry.snapshotId());
+
+      // schema ID might be null for log entry written by old writers
+      if (logEntry.schemaId() != null) {
+        generator.writeNumberField(SCHEMA_ID, logEntry.schemaId());
+      }
+
       generator.writeEndObject();
     }
     generator.writeEndArray();
-
-    generator.writeArrayFieldStart(METADATA_LOG);
-    for (MetadataLogEntry logEntry : metadata.previousFiles()) {
-      generator.writeStartObject();
-      generator.writeNumberField(TIMESTAMP_MS, logEntry.timestampMillis());
-      generator.writeStringField(METADATA_FILE, logEntry.file());
-      generator.writeEndObject();
-    }
-    generator.writeEndArray();
-
-    generator.writeEndObject();
   }
 
   /**
@@ -384,8 +395,10 @@ public class TableMetadataParser {
       Iterator<JsonNode> logIterator = node.get(SNAPSHOT_LOG).elements();
       while (logIterator.hasNext()) {
         JsonNode entryNode = logIterator.next();
+        Integer schemaId = JsonUtil.getIntOrNull(SCHEMA_ID, entryNode);
+
         entries.add(new SnapshotLogEntry(
-            JsonUtil.getLong(TIMESTAMP_MS, entryNode), JsonUtil.getLong(SNAPSHOT_ID, entryNode)));
+            JsonUtil.getLong(TIMESTAMP_MS, entryNode), JsonUtil.getLong(SNAPSHOT_ID, entryNode), schemaId));
       }
     }
 

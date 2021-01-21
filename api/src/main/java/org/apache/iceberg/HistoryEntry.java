@@ -37,4 +37,11 @@ public interface HistoryEntry extends Serializable {
    * Returns ID of the new current snapshot.
    */
   long snapshotId();
+
+  /**
+   * Returns the ID of the schema associated with this snapshot, or null if the schema information is unknown.
+   */
+  default Integer schemaId() {
+    return null;
+  }
 }
