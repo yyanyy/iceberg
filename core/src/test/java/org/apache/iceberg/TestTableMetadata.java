@@ -108,7 +108,6 @@ public class TestTableMetadata {
         SEQ_NO, System.currentTimeMillis(), 3,
         7, ImmutableList.of(TEST_SCHEMA, schema),
         5, ImmutableList.of(SPEC_5), SPEC_5.lastAssignedFieldId(),
-
         3, ImmutableList.of(SORT_ORDER_3), ImmutableMap.of("property", "value"), currentSnapshotId,
         Arrays.asList(previousSnapshot, currentSnapshot), snapshotLog, ImmutableList.of());
 
@@ -247,7 +246,7 @@ public class TestTableMetadata {
 
       // mimic an old writer by writing only schema and not the current ID or schema list
       generator.writeFieldName(SCHEMA);
-      SchemaParser.toJson(metadata.schema(), generator);
+      SchemaParser.toJson(metadata.schema().asStruct(), generator);
 
       // mimic an old writer by writing only partition-spec and not the default ID or spec list
       generator.writeFieldName(PARTITION_SPEC);
@@ -682,7 +681,7 @@ public class TestTableMetadata {
         Types.NestedField.required(2, "x", Types.StringType.get())
     );
     TableMetadata sameSchemaTable = twoSchemasTable.updateSchema(sameSchema2, 2);
-    Assert.assertEquals("Should return same table metadata",
+    Assert.assertSame("Should return same table metadata",
         twoSchemasTable, sameSchemaTable);
 
     // update schema with the the same schema and different last column ID as current should create a new table
@@ -713,7 +712,7 @@ public class TestTableMetadata {
         Types.NestedField.required(4, "x", Types.StringType.get()),
         Types.NestedField.required(6, "z", Types.IntegerType.get())
     );
-    TableMetadata threeSchemaTable = revertSchemaTable.updateSchema(schema3, 3);
+    TableMetadata threeSchemaTable = revertSchemaTable.updateSchema(schema3, 6);
     Assert.assertEquals("Should have current schema id as 2",
         2, threeSchemaTable.currentSchemaId());
     assertSameSchemaList(ImmutableList.of(schema,
@@ -722,6 +721,6 @@ public class TestTableMetadata {
     Assert.assertEquals("Should have expected schema upon return",
         schema3.asStruct(), threeSchemaTable.schema().asStruct());
     Assert.assertEquals("Should return expected last column id",
-        3, threeSchemaTable.lastColumnId());
+        6, threeSchemaTable.lastColumnId());
   }
 }
